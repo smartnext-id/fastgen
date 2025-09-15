@@ -1,15 +1,7 @@
 {
   "rewrites": [
     {
-      "source": "/login",
-      "destination": "/fastgen/web/login.html"
-    },
-    {
-      "source": "/fastgen",
-      "destination": "/fastgen/web/index.html"
-    },
-    {
-      "source": "/fastgen/(.*)",
+      "source": "/(.*)",
       "destination": "/fastgen/web/$1"
     }
   ]
