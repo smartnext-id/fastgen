@@ -1,9 +1,8 @@
 {
   "rewrites": [
     {
-      "source": "/login",
-      "destination": "/login.html"
+      "source": "/backend/:path*",
+      "destination": "/backend/:path*"
     }
   ]
 }
-
