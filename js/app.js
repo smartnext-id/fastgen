@@ -78,7 +78,7 @@
         async fetchUserTokens() {
             if (!authToken) return 0;
             try {
-                const response = await fetch(`${BACKEND_URL}/api/getTokens`, {
+                  const response = await fetch(`${BACKEND_URL}/api/getTokens`, {
                     headers: { 'Authorization': `Bearer ${authToken}` }
                 });
                 if (response.status === 403 || response.status === 401) {
@@ -233,6 +233,7 @@
     initializeApp();
 
 })(window, document);
+
 
 
 
