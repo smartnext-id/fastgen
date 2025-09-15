@@ -1,0 +1,15 @@
+# Node modules
+node_modules
+backend/node_modules
+
+# Environment variables
+.env
+backend/.env
+
+# Credentials
+credentials.json
+backend/credentials.json
+
+# Python cache
+__pycache__/
+*.pyc
