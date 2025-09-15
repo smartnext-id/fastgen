@@ -8,7 +8,6 @@ const https = require('https');
 
 // --- Inisialisasi & Konfigurasi ---
 const app = express();
-const port = 3001;
 const SPREADSHEET_ID = '1BmnF4b0acMN7gogNZpqK19oSovlTj3IDO8WgI21mlV0'; // ganti sesuai ID Sheet kamu
 const JWT_SECRET = '$2a$12$ZNckUdzNf9VOOUq5fkO9dO9nDPDvaLQfNB83744Ax0iIT8YgEokRC'; // kunci rahasia
 const SHEET_NAME = 'Users';
@@ -172,7 +171,5 @@ app.post('/api/enhancePrompt', verifyToken, async (req, res) => {
     geminiReq.end();
 });
 
-// --- Jalankan Server ---
-app.listen(port, () => {
-    console.log(`✅ Backend server running at http://localhost:${port}`);
-});
+// --- Export untuk Vercel ---
+module.exports = app;
