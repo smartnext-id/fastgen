@@ -6,7 +6,6 @@
     let userTokens = 0;
     let isGenerating = false;
     let logoPathLength = 0; // Variabel untuk panjang path SVG
-    let zoomLevel = 1.0;
 
     if (!authToken) {
         window.location.href = '/login';
@@ -14,7 +13,7 @@
     }
 
     // --- Backend & ComfyUI Communication ---
-    const BACKEND_URL = 'https://fastgen-green.vercel.app/'; // Ganti dengan URL Anda
+    const BACKEND_URL = 'http://localhost:3001';
     
     function uuidv4() { return ([1e7]+-1e3+-4e3+-8e3+-1e11).replace(/[018]/g, c => (c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16)); }
     const client_id = uuidv4();
@@ -53,18 +52,6 @@
         requestTokensBtn: document.getElementById('requestTokensBtn'),
         closeTokenModalBtn: document.getElementById('closeTokenModalBtn'),
         loadingLogoPath: document.getElementById('loading-logo-path'),
-        // New for sidebar and zoom
-        leftSidebar: document.getElementById('left-sidebar'),
-        enhanceToolBtn: document.getElementById('enhance-tool-btn'),
-        closeLeftSidebarBtn: document.getElementById('close-left-sidebar'),
-        zoomInBtn: document.getElementById('zoom-in-btn'),
-        zoomOutBtn: document.getElementById('zoom-out-btn'),
-        zoomLevel: document.getElementById('zoom-level'),
-        // --- DOM Elements (ditambah) ---
-        enhancePromptInput: document.getElementById('enhance-prompt-input'),
-        enhancePromptBtn: document.getElementById('enhance-prompt-btn'),
-        enhancerResultContainer: document.getElementById('enhancer-result-container'),
-        enhancerResult: document.getElementById('enhancer-result'),
     };
 
     // --- UI Update Functions ---
@@ -89,43 +76,16 @@
     // --- API FUNCTIONS ---
     const api = {
         async fetchUserTokens() {
-            // ... (kode dari sebelumnya)
-        },
-        async deductTokens(amount) {
-            // ... (kode dari sebelumnya)
-        },
-        async requestMoreTokens() {
-            // ... (kode dari sebelumnya)
-        },
-        // --- API FUNCTIONS (ditambah) ---
-        async enhancePrompt(keyword) {
-            if (!authToken) return null;
-            try {
-                dom.enhancePromptBtn.textContent = "Enhancing...";
-                dom.enhancePromptBtn.disabled = true;
-                const response = await fetch(`${BACKEND_URL}/api/enhancePrompt`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${authToken}` },
-                    body: JSON.stringify({ keyword }),
-                });
-                if (!response.ok) return "Failed to get suggestion.";
-                const data = await response.json();
-                return data.enhancedPrompt;
-            } catch (error) {
-                console.error("Error enhancing prompt:", error);
-                return "Error connecting to enhancer service.";
-            } finally {
-                dom.enhancePromptBtn.textContent = "Enhance";
-                dom.enhancePromptBtn.disabled = false;
-            }
-        }
-    };
-    Object.assign(api, {
-        async fetchUserTokens() {
             if (!authToken) return 0;
             try {
-                const response = await fetch(`${BACKEND_URL}/api/getTokens`, { headers: { 'Authorization': `Bearer ${authToken}` } });
-                if (response.status === 403 || response.status === 401) { localStorage.removeItem('authToken'); window.location.href = '/login'; return 0; }
+                const response = await fetch(`${BACKEND_URL}/api/getTokens`, {
+                    headers: { 'Authorization': `Bearer ${authToken}` }
+                });
+                if (response.status === 403 || response.status === 401) {
+                    localStorage.removeItem('authToken');
+                    window.location.href = '/login';
+                    return 0;
+                }
                 const data = await response.json();
                 userTokens = data.tokens;
                 updateTokenDisplay();
@@ -137,22 +97,43 @@
             try {
                  const response = await fetch(`${BACKEND_URL}/api/deductTokens`, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${authToken}` },
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${authToken}`
+                    },
                     body: JSON.stringify({ amount }),
                 });
-                if (response.status === 403 || response.status === 401) { localStorage.removeItem('authToken'); window.location.href = '/login'; return false; }
+                if (response.status === 403 || response.status === 401) {
+                    localStorage.removeItem('authToken');
+                    window.location.href = '/login';
+                    return false;
+                }
                 const data = await response.json();
-                if (data.success) { userTokens = data.newTokens; updateTokenDisplay(); return true; }
+                if (data.success) {
+                    userTokens = data.newTokens;
+                    updateTokenDisplay();
+                    return true;
+                }
                 return false;
-            } catch (error) { console.error("Error deducting tokens:", error); return false; }
+            } catch (error) {
+                console.error("Error deducting tokens:", error);
+                return false;
+            }
         },
-        async requestMoreTokens() { alert("Your request for more tokens has been sent."); return true; }
-    });
+        async requestMoreTokens() {
+             alert("Your request for more tokens has been sent to the administrator.");
+             return true;
+        }
+    };
     
     // --- Core Generation & ComfyUI Logic ---
     async function queue_prompt(promptWorkflow) {
         try {
-            const response = await fetch("/prompt", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ prompt: promptWorkflow, client_id }), });
+            const response = await fetch("/prompt", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ prompt: promptWorkflow, client_id }),
+            });
             if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
         } catch (error) {
             console.error("Failed to queue prompt to ComfyUI:", error);
@@ -166,7 +147,10 @@
     const handleGeneration = async () => {
         if (isGenerating || dom.prompt.value.length < 3) return;
         const canAfford = await api.deductTokens(TOKEN_COST);
-        if (!canAfford) { dom.tokenModal.style.display = 'flex'; return; }
+        if (!canAfford) {
+            dom.tokenModal.style.display = 'flex';
+            return;
+        }
         setUIGenerating(true);
         
         workflow["6"]["inputs"]["text"] = dom.prompt.value;
@@ -218,54 +202,11 @@
     dom.steps.addEventListener('input', () => dom.stepsValue.textContent = dom.steps.value);
     dom.cfg.addEventListener('input', () => dom.cfgValue.textContent = parseFloat(dom.cfg.value).toFixed(1));
     dom.closeTokenModalBtn.addEventListener('click', () => dom.tokenModal.style.display = 'none');
-    dom.requestTokensBtn.addEventListener('click', () => { api.requestMoreTokens(); dom.tokenModal.style.display = 'none'; });
-    if (dom.enhancePromptBtn) {
-        dom.enhancePromptBtn.addEventListener('click', async () => {
-            const keyword = dom.enhancePromptInput.value;
-            if (!keyword) return;
-            const result = await api.enhancePrompt(keyword);
-            dom.enhancerResult.textContent = result;
-            dom.enhancerResultContainer.style.display = 'block';
-        });
-    }
-    if (dom.enhancerResult) {
-        dom.enhancerResult.addEventListener('click', () => {
-            dom.prompt.value = dom.enhancerResult.textContent;
-            if(dom.leftSidebar) dom.leftSidebar.classList.remove('open');
-        });
-    }
+    dom.requestTokensBtn.addEventListener('click', () => {
+        api.requestMoreTokens();
+        dom.tokenModal.style.display = 'none';
+    });
 
-    // --- Logika Zoom & Pan Canvas ---
-    let isPanning = false;
-    let panStart = { x: 0, y: 0 };
-    let panOffset = { x: 0, y: 0 };
-    const canvas = dom.imageShowcase;
-
-    if (dom.zoomInBtn && dom.zoomOutBtn && dom.zoomLevel && canvas) {
-        dom.zoomInBtn.addEventListener('click', () => {
-            zoomLevel = Math.min(zoomLevel * 1.2, 5);
-            canvas.style.transform = `scale(${zoomLevel})`;
-            dom.zoomLevel.textContent = Math.round(zoomLevel * 100) + '%';
-        });
-        dom.zoomOutBtn.addEventListener('click', () => {
-            zoomLevel = Math.max(zoomLevel * 0.8, 0.2);
-            canvas.style.transform = `scale(${zoomLevel})`;
-            dom.zoomLevel.textContent = Math.round(zoomLevel * 100) + '%';
-        });
-        // Optional: add pan logic if needed
-    }
-
-    // --- Logika Sidebar Kiri (Enhance Prompt) ---
-    if (dom.enhanceToolBtn && dom.leftSidebar) {
-        dom.enhanceToolBtn.addEventListener('click', () => {
-            dom.leftSidebar.classList.toggle('open');
-        });
-    }
-    if (dom.closeLeftSidebarBtn && dom.leftSidebar) {
-        dom.closeLeftSidebarBtn.addEventListener('click', () => {
-            dom.leftSidebar.classList.remove('open');
-        });
-    }
 
     // --- Initialization ---
     const initializeApp = async () => {
