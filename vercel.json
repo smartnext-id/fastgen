@@ -9,7 +9,7 @@
       "destination": "/fastgen/web/index.html"
     },
     {
-      "source": "/(.*)",
+      "source": "/fastgen/(.*)",
       "destination": "/fastgen/web/$1"
     }
   ]
