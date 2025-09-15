@@ -20,4 +20,12 @@
     "googleapis": "^159.0.0",
     "jsonwebtoken": "^9.0.2"
   }
+
+"scripts": {
+  "start": "node backend/index.js"
 }
+
+  
+}
+
+
