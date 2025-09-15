@@ -5,7 +5,8 @@ document.getElementById('login-form').addEventListener('submit', async (e) => {
     const errorMessage = document.getElementById('error-message');
     
     try {
-        const response = await fetch('http://localhost:3001/api/login', {
+        // Diperbaiki: URL sekarang mengarah ke server Vercel, sesuai dengan konfigurasi
+        const response = await fetch('https://fastgen-ten.vercel.app/backend/api/login', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ userId, password }),
