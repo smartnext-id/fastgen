@@ -17,7 +17,7 @@ document.getElementById('login-form').addEventListener('submit', async (e) => {
 
         const data = await response.json();
         localStorage.setItem('authToken', data.token); // Simpan token
-        window.location.href = 'https://fastgen-green.vercel.app/'; // Arahkan ke halaman utama
+        window.location.href = '/fastgen';// Arahkan ke halaman utama
 
     } catch (error) {
         errorMessage.textContent = error.message;
