@@ -5,8 +5,11 @@ document.getElementById('login-form').addEventListener('submit', async (e) => {
     const errorMessage = document.getElementById('error-message');
     
     try {
-            const BACKEND_URL = "https://fastgen-green.vercel.app/api/login";
-            const response = await fetch(BACKEND_URL, {
+       // URL yang benar, sesuai dengan konfigurasi Vercel dan server.js
+       const BACKEND_URL = "https://fastgen-green.vercel.app/backend/api/login"; 
+       
+       // Perbaiki syntax `await fetch`
+       const response = await fetch(BACKEND_URL, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ userId, password }),
@@ -25,7 +28,3 @@ document.getElementById('login-form').addEventListener('submit', async (e) => {
         errorMessage.style.display = 'block';
     }
 });
-
-
-
-
