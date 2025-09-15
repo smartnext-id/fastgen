@@ -14,7 +14,7 @@
     }
 
     // --- Backend & ComfyUI Communication ---
-    const BACKEND_URL = 'http://localhost:3001';
+    const BACKEND_URL = 'https://fastgen-green.vercel.app/'; // Ganti dengan URL Anda
     
     function uuidv4() { return ([1e7]+-1e3+-4e3+-8e3+-1e11).replace(/[018]/g, c => (c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16)); }
     const client_id = uuidv4();
