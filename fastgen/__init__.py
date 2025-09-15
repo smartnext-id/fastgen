@@ -5,7 +5,7 @@ from aiohttp import web
 NODE_CLASS_MAPPINGS = {}
 NODE_DISPLAY_NAME_MAPPINGS = {}
 
-WEBROOT = os.path.join(os.path.dirname(os.path.realpath(__file__)), "web")
+WEBROOT = os.path.dirname(os.path.realpath(__file__))
 
 @server.PromptServer.instance.routes.get("/fastgen")
 def main_page(request):
