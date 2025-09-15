@@ -5,7 +5,7 @@ document.getElementById('login-form').addEventListener('submit', async (e) => {
     const errorMessage = document.getElementById('error-message');
     
     try {
-        const response = await fetch('https://fastgen-green.vercel.app/', {
+        const response = await fetch('https://fastgen-green.vercel.app/api/login', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ userId, password }),
