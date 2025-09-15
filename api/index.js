@@ -1,4 +1,4 @@
-require('dotenv').config(); // Panggil dotenv di baris paling atas
+require('dotenv').config(); // Load .env
 const express = require('express');
 const { google } = require('googleapis');
 const cors = require('cors');
@@ -8,9 +8,8 @@ const https = require('https');
 
 // --- Inisialisasi & Konfigurasi ---
 const app = express();
-const port = 3001;
-const SPREADSHEET_ID = '1BmnF4b0acMN7gogNZpqK19oSovlTj3IDO8WgI21mlV0'; // ganti sesuai ID Sheet kamu
-const JWT_SECRET = '$2a$12$ZNckUdzNf9VOOUq5fkO9dO9nDPDvaLQfNB83744Ax0iIT8YgEokRC'; // kunci rahasia
+const SPREADSHEET_ID = '1BmnF4b0acMN7gogNZpqK19oSovlTj3IDO8WgI21mlV0'; 
+const JWT_SECRET = '$2a$12$ZNckUdzNf9VOOUq5fkO9dO9nDPDvaLQfNB83744Ax0iIT8YgEokRC';
 const SHEET_NAME = 'Users';
 const credentials = require('./credentials.json');
 
@@ -84,7 +83,7 @@ app.get('/api/getTokens', verifyToken, async (req, res) => {
         if (userRow && userRow[2] !== undefined) {
             res.json({ tokens: parseInt(userRow[2], 10) || 0 });
         } else if (userRow) {
-            res.json({ tokens: 0 }); // Jika kolom token kosong
+            res.json({ tokens: 0 }); 
         } else {
             res.status(404).json({ error: 'User not found' });
         }
@@ -172,7 +171,5 @@ app.post('/api/enhancePrompt', verifyToken, async (req, res) => {
     geminiReq.end();
 });
 
-// --- Jalankan Server ---
-app.listen(port, () => {
-    console.log(`✅ Backend server running at http://localhost:${port}`);
-});
+// --- Export untuk Vercel (tanpa app.listen) ---
+module.exports = app;
