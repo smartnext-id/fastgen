@@ -5,7 +5,7 @@ document.getElementById('login-form').addEventListener('submit', async (e) => {
     const errorMessage = document.getElementById('error-message');
     
     try {
-        const BACKEND_URL = 'https://fastgen-green.vercel.app/login.html'; // Ganti dengan URL Vercel Anda
+       const BACKEND_URL = "https://fastgen-green.vercel.app/backend/login";
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ userId, password }),
@@ -24,4 +24,5 @@ document.getElementById('login-form').addEventListener('submit', async (e) => {
         errorMessage.style.display = 'block';
     }
 });
+
 
