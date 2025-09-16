@@ -1,12 +1,38 @@
 {
   "version": 2,
   "builds": [
-    { "src": "backend/index.js", "use": "@vercel/node" }
+    {
+      "src": "backend/index.js",
+      "use": "@vercel/node"
+    },
+    {
+      "src": "fastgen/web/index.html",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "fastgen/web/login.html",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "fastgen/web/style.css",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "fastgen/web/js/app.js",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "fastgen/web/js/login.js",
+      "use": "@vercel/static"
+    }
   ],
   "routes": [
     { "src": "/api/(.*)", "dest": "backend/index.js" },
+    { "src": "/fastgen/web/style.css", "dest": "fastgen/web/style.css" },
+    { "src": "/fastgen/web/js/app.js", "dest": "fastgen/web/js/app.js" },
+    { "src": "/fastgen/web/js/login.js", "dest": "fastgen/web/js/login.js" },
     { "src": "/login", "dest": "fastgen/web/login.html" },
     { "src": "/fastgen", "dest": "fastgen/web/index.html" },
-    { "src": "/fastgen/web/(.*)", "dest": "fastgen/web/$1" }
+    { "src": "/", "dest": "/fastgen" }
   ]
 }
