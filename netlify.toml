@@ -1,11 +1,19 @@
 # File: netlify.toml
 
 [build]
-  # Folder tempat backend (Netlify Functions) berada
   functions = "netlify/functions"
   publish = "fastgen/web"
+
 # Aturan rewrite ini penting agar frontend Anda bisa memanggil API
 [[redirects]]
   from = "/api/*"
   to = "/.netlify/functions/api/:splat"
+  status = 200
+
+# ATURAN BARU YANG PENTING
+# Ini memberitahu Netlify untuk mengarahkan semua path yang tidak ditemukan
+# (seperti /fastgen) ke index.html
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
   status = 200
