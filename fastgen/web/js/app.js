@@ -6,24 +6,38 @@
     let userTokens = 0;
     let isGenerating = false;
     let logoPathLength = 0;
+    let zoomLevel = 1.0;
 
     if (!authToken) {
         window.location.href = '/login';
         return;
     }
 
+    // --- Mode detection: Local vs Netlify ---
+    const isLocal = window.location.hostname === "localhost";
+    const BACKEND_URL = isLocal ? "http://localhost:3001" : "/api";
+
+    // NOTE: ganti ngrok setiap start ComfyUI
+    const comfy_hostname = isLocal
+        ? `${window.location.hostname}:${window.location.port}`
+        : "44ed6cef8e1f.ngrok-free.app";
+
     // --- Backend & ComfyUI Communication ---
-    function uuidv4() { return ([1e7]+-1e3+-4e3+-8e3+-1e11).replace(/[018]/g, c => (c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16)); }
+    function uuidv4() {
+        return ([1e7]+-1e3+-4e3+-8e3+-1e11).replace(/[018]/g,
+            c => (c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16)
+        );
+    }
     const client_id = uuidv4();
 
-    // !! PENTING: Pastikan URL ngrok ini adalah yang sedang aktif di komputer Anda !!
-    const comfy_hostname = "44ed6cef8e1f.ngrok-free.app"; 
-    
-    // Koneksi WebSocket ke server ComfyUI via ngrok
-    const socket = new WebSocket(`wss://${comfy_hostname}/ws?clientId=${client_id}`);
-    socket.addEventListener("open", () => console.log("✅ Berhasil terhubung ke server ComfyUI"));
-    socket.addEventListener("error", () => console.error("❌ Gagal terhubung ke server ComfyUI. Pastikan ngrok berjalan."));
+    const socket = new WebSocket(
+        isLocal
+            ? `ws://${comfy_hostname}/ws?clientId=${client_id}`
+            : `wss://${comfy_hostname}/ws?clientId=${client_id}`
+    );
 
+    socket.addEventListener("open", () => console.log("✅ Connected to ComfyUI server"));
+    socket.addEventListener("error", () => console.error("❌ Failed to connect to ComfyUI"));
 
     async function loadWorkflow() {
         const response = await fetch("/js/base_workflow.json");
@@ -55,11 +69,16 @@
         requestTokensBtn: document.getElementById('requestTokensBtn'),
         closeTokenModalBtn: document.getElementById('closeTokenModalBtn'),
         loadingLogoPath: document.getElementById('loading-logo-path'),
-        enhanceToolBtn: document.getElementById('enhance-tool-btn'),
+        // Sidebar & zoom
         leftSidebar: document.getElementById('left-sidebar'),
+        enhanceToolBtn: document.getElementById('enhance-tool-btn'),
         closeLeftSidebarBtn: document.getElementById('close-left-sidebar'),
-        enhancePromptBtn: document.getElementById('enhance-prompt-btn'),
+        zoomInBtn: document.getElementById('zoom-in-btn'),
+        zoomOutBtn: document.getElementById('zoom-out-btn'),
+        zoomLevel: document.getElementById('zoom-level'),
+        // Enhance prompt
         enhancePromptInput: document.getElementById('enhance-prompt-input'),
+        enhancePromptBtn: document.getElementById('enhance-prompt-btn'),
         enhancerResultContainer: document.getElementById('enhancer-result-container'),
         enhancerResult: document.getElementById('enhancer-result'),
     };
@@ -88,7 +107,7 @@
         async fetchUserTokens() {
             if (!authToken) return 0;
             try {
-                const response = await fetch('/api/getTokens', {
+                const response = await fetch(`${BACKEND_URL}/getTokens`, {
                     headers: { 'Authorization': `Bearer ${authToken}` }
                 });
                 if (response.status === 403 || response.status === 401) {
@@ -100,12 +119,15 @@
                 userTokens = data.tokens;
                 updateTokenDisplay();
                 return data.tokens;
-            } catch (error) { console.error("Error fetching tokens:", error); return 0; }
+            } catch (error) {
+                console.error("Error fetching tokens:", error);
+                return 0;
+            }
         },
         async deductTokens(amount) {
             if (!authToken) return false;
             try {
-                const response = await fetch('/api/deductTokens', {
+                const response = await fetch(`${BACKEND_URL}/deductTokens`, {
                     method: 'POST',
                     headers: { 
                         'Content-Type': 'application/json',
@@ -113,29 +135,28 @@
                     },
                     body: JSON.stringify({ amount }),
                 });
-                 if (!response.ok) { // Penanganan error lebih baik
-                    const errorData = await response.json();
-                    throw new Error(errorData.message || 'Gagal mengurangi token.');
-                }
                 const data = await response.json();
                 if (data.success) {
                     userTokens = data.newTokens;
                     updateTokenDisplay();
                     return true;
                 } else {
-                    alert(data.message || 'Tidak cukup token.');
+                    alert(data.message || 'Not enough tokens.');
                     return false;
                 }
             } catch (error) {
                 console.error("Error deducting tokens:", error);
-                alert(error.message);
                 return false;
             }
+        },
+        async requestMoreTokens() {
+            alert("Your request for more tokens has been sent.");
+            return true;
         },
         async enhancePrompt(keyword) {
             if (!authToken) return { error: "Not authenticated" };
             try {
-                const response = await fetch('/api/enhancePrompt', {
+                const response = await fetch(`${BACKEND_URL}/enhancePrompt`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -146,43 +167,41 @@
                 return await response.json();
             } catch (error) {
                 console.error("Error enhancing prompt:", error);
-                return { error: "Gagal terhubung ke layanan enhance." };
+                return { error: "Enhance service unreachable." };
             }
-        },
-        async requestMoreTokens() {
-            alert("Permintaan Anda untuk token tambahan telah dikirim ke administrator.");
-            return true;
         }
     };
-    
+
     // --- Core Generation & ComfyUI Logic ---
     async function queue_prompt(promptWorkflow) {
         try {
-            const response = await fetch(`https://${comfy_hostname}/prompt`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ prompt: promptWorkflow, client_id }),
-            });
+            const response = await fetch(
+                isLocal ? "/prompt" : `https://${comfy_hostname}/prompt`,
+                {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ prompt: promptWorkflow, client_id }),
+                }
+            );
             if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
         } catch (error) {
-            console.error("Gagal mengirim prompt ke ComfyUI:", error);
+            console.error("Failed to queue prompt to ComfyUI:", error);
             setUIGenerating(false);
-            // Refund token jika gagal mengirim
-            const refundResponse = await api.deductTokens(-TOKEN_COST);
-            if(refundResponse) alert("Gagal mengirim job ke ComfyUI. Token telah dikembalikan.");
+            userTokens += TOKEN_COST;
+            updateTokenDisplay();
+            alert("Failed to send job to ComfyUI. Tokens refunded.");
         }
     }
 
     const handleGeneration = async () => {
         if (isGenerating || dom.prompt.value.length < 3) return;
-        
         const canAfford = await api.deductTokens(TOKEN_COST);
         if (!canAfford) {
             dom.tokenModal.style.display = 'flex';
             return;
         }
         setUIGenerating(true);
-        
+
         workflow["6"]["inputs"]["text"] = dom.prompt.value;
         workflow["4"]["inputs"]["ckpt_name"] = dom.checkpoint.value;
         workflow["3"]["inputs"]["steps"] = parseInt(dom.steps.value, 10);
@@ -196,7 +215,7 @@
             workflow["10"]["inputs"]["lora_name"] = dom.lora.value;
             workflow["3"]["inputs"]["model"] = ["10", 0];
         } else {
-             workflow["3"]["inputs"]["model"] = ["4", 0];
+            workflow["3"]["inputs"]["model"] = ["4", 0];
         }
         await queue_prompt(workflow);
     };
@@ -205,7 +224,7 @@
         const data = JSON.parse(event.data);
         if (data.type === 'progress') {
             const { value, max } = data.data;
-            dom.progressText.textContent = `Langkah ${value} dari ${max}`;
+            dom.progressText.textContent = `Step ${value} of ${max}`;
             const progress = value / max;
             const offset = logoPathLength * (1 - progress);
             dom.loadingLogoPath.style.strokeDashoffset = offset;
@@ -215,7 +234,9 @@
             setTimeout(() => {
                 setUIGenerating(false);
                 const image = data.data.output.images[0];
-                const url = `https://${comfy_hostname}/view?filename=${image.filename}&type=${image.type}&subfolder=${image.subfolder}&rand=${Math.random()}`;
+                const url = isLocal
+                    ? `/view?filename=${image.filename}&type=${image.type}&subfolder=${image.subfolder}&rand=${Math.random()}`
+                    : `https://${comfy_hostname}/view?filename=${image.filename}&type=${image.type}&subfolder=${image.subfolder}&rand=${Math.random()}`;
                 const img = document.createElement('img');
                 img.src = url;
                 dom.imageShowcase.prepend(img);
@@ -232,42 +253,51 @@
     dom.steps.addEventListener('input', () => dom.stepsValue.textContent = dom.steps.value);
     dom.cfg.addEventListener('input', () => dom.cfgValue.textContent = parseFloat(dom.cfg.value).toFixed(1));
     dom.closeTokenModalBtn.addEventListener('click', () => dom.tokenModal.style.display = 'none');
-    dom.requestTokensBtn.addEventListener('click', () => {
-        api.requestMoreTokens();
-        dom.tokenModal.style.display = 'none';
-    });
+    dom.requestTokensBtn.addEventListener('click', () => { api.requestMoreTokens(); dom.tokenModal.style.display = 'none'; });
 
-    dom.enhanceToolBtn.addEventListener('click', () => {
-        dom.leftSidebar.classList.toggle('open');
-    });
+    if (dom.enhancePromptBtn) {
+        dom.enhancePromptBtn.addEventListener('click', async () => {
+            const keyword = dom.enhancePromptInput.value;
+            if (!keyword) return;
+            const result = await api.enhancePrompt(keyword);
+            if (result.enhancedPrompt) {
+                dom.enhancerResult.textContent = result.enhancedPrompt;
+                dom.enhancerResultContainer.style.display = 'block';
+            }
+        });
+    }
+    if (dom.enhancerResult) {
+        dom.enhancerResult.addEventListener('click', () => {
+            dom.prompt.value = dom.enhancerResult.textContent;
+            if(dom.leftSidebar) dom.leftSidebar.classList.remove('open');
+        });
+    }
 
-    dom.closeLeftSidebarBtn.addEventListener('click', () => {
-        dom.leftSidebar.classList.remove('open');
-    });
+    // --- Zoom logic ---
+    if (dom.zoomInBtn && dom.zoomOutBtn && dom.zoomLevel && dom.imageShowcase) {
+        dom.zoomInBtn.addEventListener('click', () => {
+            zoomLevel = Math.min(zoomLevel * 1.2, 5);
+            dom.imageShowcase.style.transform = `scale(${zoomLevel})`;
+            dom.zoomLevel.textContent = Math.round(zoomLevel * 100) + '%';
+        });
+        dom.zoomOutBtn.addEventListener('click', () => {
+            zoomLevel = Math.max(zoomLevel * 0.8, 0.2);
+            dom.imageShowcase.style.transform = `scale(${zoomLevel})`;
+            dom.zoomLevel.textContent = Math.round(zoomLevel * 100) + '%';
+        });
+    }
 
-    dom.enhancePromptBtn.addEventListener('click', async () => {
-        const keyword = dom.enhancePromptInput.value;
-        if (!keyword || dom.enhancePromptBtn.disabled) return;
-
-        dom.enhancePromptBtn.disabled = true;
-        dom.enhancerResult.textContent = 'Meningkatkan prompt...';
-        dom.enhancerResultContainer.style.display = 'block';
-
-        const result = await api.enhancePrompt(keyword);
-
-        if (result.enhancedPrompt) {
-            dom.enhancerResult.textContent = result.enhancedPrompt;
-            dom.enhancerResult.style.cursor = 'pointer';
-            dom.enhancerResult.onclick = () => {
-                dom.prompt.value = result.enhancedPrompt;
-                dom.leftSidebar.classList.remove('open');
-            };
-        } else {
-            dom.enhancerResult.textContent = result.error || 'Gagal meningkatkan prompt.';
-        }
-
-        dom.enhancePromptBtn.disabled = false;
-    });
+    // --- Sidebar toggle ---
+    if (dom.enhanceToolBtn && dom.leftSidebar) {
+        dom.enhanceToolBtn.addEventListener('click', () => {
+            dom.leftSidebar.classList.toggle('open');
+        });
+    }
+    if (dom.closeLeftSidebarBtn && dom.leftSidebar) {
+        dom.closeLeftSidebarBtn.addEventListener('click', () => {
+            dom.leftSidebar.classList.remove('open');
+        });
+    }
 
     // --- Initialization ---
     const initializeApp = async () => {
@@ -292,8 +322,4 @@
     };
 
     initializeApp();
-
 })(window, document);
-
-
-
