@@ -18,11 +18,11 @@
     function uuidv4() { return ([1e7]+-1e3+-4e3+-8e3+-1e11).replace(/[018]/g, c => (c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16)); }
     const client_id = uuidv4();
 
-    // GANTI DENGAN URL DARI NGROK ANDA, TANPA "https://"
-    const comfy_hostname = "https://f3c7a11df2ba.ngrok-free.app -> http://localhost:8188  "; 
-    // Gunakan wss:// untuk koneksi yang aman
+    // CONTOH YANG BENAR (Ganti dengan URL ngrok Anda yang sebenarnya)
+    const comfy_hostname = "collectible-distinct.ngrok-free.app"; 
+    
+    // Baris ini sudah benar, tidak perlu diubah
     const socket = new WebSocket(`wss://${comfy_hostname}/ws?clientId=${client_id}`);
-    socket.addEventListener("open", () => console.log("✅ Connected to ComfyUI server"));
 
     async function loadWorkflow() {
         const response = await fetch("/fastgen/js/base_workflow.json");
@@ -235,6 +235,7 @@
     initializeApp();
 
 })(window, document);
+
 
 
 
