@@ -17,7 +17,7 @@
     const client_id = uuidv4();
 
     // !! PENTING: Pastikan URL ngrok ini adalah yang sedang aktif di komputer Anda !!
-    const comfy_hostname = "f3c2a11f2fba.ngrok-free.app"; 
+    const comfy_hostname = "d5edc6c061d7.ngrok-free.app"; 
     
     // Koneksi WebSocket ke server ComfyUI via ngrok
     const socket = new WebSocket(`wss://${comfy_hostname}/ws?clientId=${client_id}`);
@@ -294,3 +294,4 @@
     initializeApp();
 
 })(window, document);
+
