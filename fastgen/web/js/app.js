@@ -55,6 +55,13 @@
         requestTokensBtn: document.getElementById('requestTokensBtn'),
         closeTokenModalBtn: document.getElementById('closeTokenModalBtn'),
         loadingLogoPath: document.getElementById('loading-logo-path'),
+        enhanceToolBtn: document.getElementById('enhance-tool-btn'),
+        leftSidebar: document.getElementById('left-sidebar'),
+        closeLeftSidebarBtn: document.getElementById('close-left-sidebar'),
+        enhancePromptBtn: document.getElementById('enhance-prompt-btn'),
+        enhancePromptInput: document.getElementById('enhance-prompt-input'),
+        enhancerResultContainer: document.getElementById('enhancer-result-container'),
+        enhancerResult: document.getElementById('enhancer-result'),
     };
 
     // --- UI Update Functions ---
@@ -238,6 +245,7 @@
     initializeApp();
 
 })(window, document);
+
 
 
 
