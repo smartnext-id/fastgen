@@ -4,10 +4,9 @@
   "description": "",
   "main": "index.js",
   "type": "commonjs",
- "scripts": {
-  "start": "node api/index.js",
-  "test": "echo \"Error: no test specified\" && exit 1"
-}
+  "scripts": {
+    "start": "node api/index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
   "author": "",
@@ -20,7 +19,7 @@
     "firebase-admin": "^13.5.0",
     "google-auth-library": "^10.3.0",
     "googleapis": "^159.0.0",
-    "jsonwebtoken": "^9.0.2"
+    "jsonwebtoken": "^9.0.2",
+    "serverless-http": "^4.0.0"
   }
 }
-

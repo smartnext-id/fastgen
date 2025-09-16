@@ -80,7 +80,7 @@
         async fetchUserTokens() {
             if (!authToken) return 0;
             try {
-                const response = await fetch(`${BACKEND_URL}/getTokens`, {
+                const response = await fetch('/api/getTokens', {
                     headers: { 'Authorization': `Bearer ${authToken}` }
                 });
                 if (response.status === 403 || response.status === 401) {
