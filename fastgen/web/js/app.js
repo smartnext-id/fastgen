@@ -15,8 +15,6 @@
 
     // --- Config Netlify + ngrok ---
     const BACKEND_URL = "/api";
-    const comfy_hostname = "9dcad45fe7f2.ngrok-free.app "; // ganti kalau restart ngrok
-
        // --- Backend & ComfyUI Communication ---
     const comfy_hostname = "9dcad45fe7f2.ngrok-free.app"; // Pastikan tidak ada spasi di belakang
     const comfy_url = `https://${comfy_hostname}`;
@@ -313,6 +311,7 @@
 
     initializeApp();
 })(window, document);
+
 
 
 
