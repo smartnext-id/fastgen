@@ -3,10 +3,7 @@
 [build]
   # Folder tempat backend (Netlify Functions) berada
   functions = "netlify/functions"
-  
-  # Folder tempat frontend (situs statis) Anda berada
   publish = "fastgen/web"
-
 # Aturan rewrite ini penting agar frontend Anda bisa memanggil API
 [[redirects]]
   from = "/api/*"
