@@ -222,7 +222,7 @@
             setTimeout(() => {
                 setUIGenerating(false);
                 const image = data.data.output.images[0];
-                const url = `https://${comfy_hostname}/view?filename=${image.filename}&type=${image.type}&subfolder=${image.subfolder}&rand=${Math.random()}`;
+               const url = `https://${comfy_hostname}/view?filename=${image.filename}&type=${image.type}&subfolder=${image.subfolder}&rand=${Math.random()}`;
                 const img = document.createElement('img');
                 img.src = url;
                 dom.imageShowcase.prepend(img);
@@ -309,3 +309,4 @@
 
     initializeApp();
 })(window, document);
+
