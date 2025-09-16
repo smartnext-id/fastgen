@@ -6,6 +6,8 @@ document.getElementById('login-form').addEventListener('submit', async (e) => {
     
     try {
         const BACKEND_URL = 'https://fastgen-ten.vercel.app/api'; // Ganti dengan URL Vercel Anda
+
+        const response = await fetch(`${BACKEND_URL}/login`, { // <--- Ini bagian yang salah
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ userId, password }),
@@ -16,12 +18,11 @@ document.getElementById('login-form').addEventListener('submit', async (e) => {
         }
 
         const data = await response.json();
-        localStorage.setItem('authToken', data.token); // Simpan token
-        window.location.href = '/fastgen';// Arahkan ke halaman utama
+        localStorage.setItem('authToken', data.token);
+        window.location.href = '/fastgen';
 
     } catch (error) {
         errorMessage.textContent = error.message;
         errorMessage.style.display = 'block';
     }
 });
-
