@@ -2,15 +2,30 @@
   "version": 2,
   "builds": [
     {
-      "src": "backend/index.js",
+      "src": "api/index.js",
       "use": "@vercel/node"
     }
   ],
   "routes": [
-    { "src": "/api/(.*)", "dest": "backend/index.js" },
-    { "src": "/fastgen/(.*)", "dest": "/fastgen/web/$1" },
-    { "src": "/login", "dest": "/fastgen/web/login.html" },
-    { "src": "/fastgen", "dest": "/fastgen/web/index.html" },
-    { "src": "/", "dest": "/fastgen" }
+    {
+      "src": "/api/(.*)",
+      "dest": "/api/index.js"
+    },
+    {
+      "src": "/fastgen/(.*)",
+      "dest": "/fastgen/web/$1"
+    },
+    {
+      "src": "/login",
+      "dest": "/fastgen/web/login.html"
+    },
+    {
+      "src": "/fastgen",
+      "dest": "/fastgen/web/index.html"
+    },
+    {
+      "src": "/",
+      "dest": "/fastgen"
+    }
   ]
 }
