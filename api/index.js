@@ -11,7 +11,7 @@ const app = express();
 const SPREADSHEET_ID = '1BmnF4b0acMN7gogNZpqK19oSovlTj3IDO8WgI21mlV0'; 
 const JWT_SECRET = '$2a$12$ZNckUdzNf9VOOUq5fkO9dO9nDPDvaLQfNB83744Ax0iIT8YgEokRC';
 const SHEET_NAME = 'Users';
-const credentials = require('./credentials.json');
+const credentials = JSON.parse(process.env.GOOGLE_CREDENTIALS);
 
 app.use(cors());
 app.use(express.json());
@@ -173,3 +173,4 @@ app.post('/api/enhancePrompt', verifyToken, async (req, res) => {
 
 // --- Export untuk Vercel (tanpa app.listen) ---
 module.exports = app;
+
