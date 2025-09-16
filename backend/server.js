@@ -5,6 +5,8 @@ const cors = require('cors');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const https = require('https');
+const WebSocket = require('ws'); // Tambahkan library WebSocket
+const http = require('http'); // Tambahkan library http
 
 // --- Inisialisasi & Konfigurasi ---
 const app = express();
@@ -12,6 +14,8 @@ const SPREADSHEET_ID = process.env.SPREADSHEET_ID;
 const JWT_SECRET = process.env.JWT_SECRET;
 const SHEET_NAME = 'Users';
 const credentials = JSON.parse(process.env.GOOGLE_CREDENTIALS);
+const httpServer = http.createServer(app); // Buat server HTTP
+const comfyUIAddress = 'http://127.0.0.1:8188'; // Alamat ComfyUI lokal Anda
 
 app.use(cors());
 app.use(express.json());
@@ -42,6 +46,63 @@ function verifyToken(req, res, next) {
 }
 
 // --- API Endpoints ---
+app.use(cors());
+app.use(express.json());
+// Endpoint untuk memproses prompt dari frontend
+app.post('/prompt', async (req, res) => {
+    try {
+        const { prompt, client_id } = req.body;
+        const comfyResponse = await fetch(`${comfyUIAddress}/prompt`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ prompt, client_id }),
+        });
+        if (!comfyResponse.ok) {
+            throw new Error(`Failed to queue prompt to ComfyUI: ${comfyResponse.status}`);
+        }
+        res.json({ message: "Prompt queued successfully" });
+    } catch (error) {
+        console.error('Error proxying prompt:', error);
+        res.status(500).json({ error: 'Failed to proxy prompt to ComfyUI' });
+    }
+});
+
+// Menyajikan folder output ComfyUI secara publik
+const path = require('path');
+const comfyUIOutputDirectory = path.join('C:\\ComfyUI_windows_portable_nvidia\\ComfyUI_windows_portable\\ComfyUI\\output');
+app.use('/view', express.static(comfyUIOutputDirectory));
+app.use('/output', express.static(comfyUIOutputDirectory));
+
+
+// --- PROXY WEBSOCKET KE COMFYUI ---
+const wss = new WebSocket.Server({ server: httpServer });
+
+wss.on('connection', ws => {
+    console.log('Client connected to backend WebSocket');
+    const comfyWs = new WebSocket(`${comfyUIAddress}/ws`);
+
+    comfyWs.on('open', () => {
+        console.log('Backend connected to ComfyUI WebSocket');
+    });
+
+    comfyWs.on('message', message => {
+        ws.send(message); // Teruskan pesan dari ComfyUI ke frontend
+    });
+
+    comfyWs.on('close', () => {
+        console.log('Backend disconnected from ComfyUI WebSocket');
+        ws.close();
+    });
+
+    ws.on('message', message => {
+        comfyWs.send(message); // Teruskan pesan dari frontend ke ComfyUI
+    });
+
+    ws.on('close', () => {
+        comfyWs.close();
+    });
+});
+
 // LOGIN
 app.post('/api/login', async (req, res) => {
     const { userId, password } = req.body;
@@ -170,6 +231,12 @@ app.post('/api/enhancePrompt', verifyToken, async (req, res) => {
     geminiReq.write(postData);
     geminiReq.end();
 });
+
+const port = process.env.PORT || 3000;
+httpServer.listen(port, () => {
+  console.log(`Backend server running on http://localhost:${port}`);
+});
+
 
 // --- Export untuk Vercel ---
 module.exports = app;
