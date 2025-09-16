@@ -26,7 +26,7 @@
     socket.addEventListener("open", () => console.log("✅ Connected to ComfyUI server"));
 
         async function loadWorkflow() {
-        const response = await fetch("/fastgen/web/js/base_workflow.json"); // Path disesuaikan agar lebih akurat
+        const response = await fetch("/js/base_workflow.json"); // Path disesuaikan agar lebih akurat
         return await response.json();
     }
     const workflow = await loadWorkflow();
@@ -238,6 +238,7 @@
     initializeApp();
 
 })(window, document);
+
 
 
 
