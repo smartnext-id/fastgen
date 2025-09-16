@@ -17,18 +17,22 @@
     const BACKEND_URL = "/api";
     const comfy_hostname = "9dcad45fe7f2.ngrok-free.app "; // ganti kalau restart ngrok
 
-    // --- Backend & ComfyUI Communication ---
+       // --- Backend & ComfyUI Communication ---
+    const comfy_hostname = "9dcad45fe7f2.ngrok-free.app"; // Pastikan tidak ada spasi di belakang
+    const comfy_url = `https://${comfy_hostname}`;
+    
     function uuidv4() {
         return ([1e7]+-1e3+-4e3+-8e3+-1e11).replace(/[018]/g,
             c => (c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16)
         );
     }
     const client_id = uuidv4();
-
+    
+    // Frontend akan terhubung ke WebSocket di backend kita
     const socket = new WebSocket(`wss://${comfy_hostname}/ws?clientId=${client_id}`);
-
-    socket.addEventListener("open", () => console.log("✅ Connected to ComfyUI server"));
-    socket.addEventListener("error", () => console.error("❌ Failed to connect to ComfyUI"));
+    
+    socket.addEventListener("open", () => console.log("✅ Connected to backend WebSocket"));
+    socket.addEventListener("error", () => console.error("❌ Failed to connect to backend WebSocket"));
 
     async function loadWorkflow() {
         const response = await fetch("/js/base_workflow.json");
@@ -164,9 +168,9 @@
     };
 
     // --- Core Generation & ComfyUI Logic ---
-    async function queue_prompt(promptWorkflow) {
+        async function queue_prompt(promptWorkflow) {
         try {
-            const response = await fetch(`https://${comfy_hostname}/prompt`, {
+            const response = await fetch(`${comfy_url}/prompt`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ prompt: promptWorkflow, client_id }),
@@ -309,6 +313,7 @@
 
     initializeApp();
 })(window, document);
+
 
 
 
