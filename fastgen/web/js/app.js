@@ -78,7 +78,7 @@
         async fetchUserTokens() {
             if (!authToken) return 0;
             try {
-                const response = await fetch(`${BACKEND_URL}/api/getTokens`, {
+                const response = await fetch(`${BACKEND_URL}/getTokens`, {
                     headers: { 'Authorization': `Bearer ${authToken}` }
                 });
                 if (response.status === 403 || response.status === 401) {
@@ -95,7 +95,7 @@
         async deductTokens(amount) {
             if (!authToken) return false;
             try {
-                 const response = await fetch(`${BACKEND_URL}/api/deductTokens`, {
+                 const response = await fetch(`${BACKEND_URL}/deductTokens`, {
                     method: 'POST',
                     headers: { 
                         'Content-Type': 'application/json',
@@ -233,4 +233,5 @@
     initializeApp();
 
 })(window, document);
+
 
