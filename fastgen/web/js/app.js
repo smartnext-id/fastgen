@@ -136,7 +136,26 @@
             alert("Your request for more tokens has been sent to the administrator.");
             return true;
         }
+         // --- Tambahkan fungsi ini ---
+        async enhancePrompt(keyword) {
+        if (!authToken) return { error: "Not authenticated" };
+        try {
+            const response = await fetch('/api/enhancePrompt', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${authToken}`
+                },
+                body: JSON.stringify({ keyword }),
+            });
+            return await response.json();
+        } catch (error) {
+            console.error("Error enhancing prompt:", error);
+            return { error: "Failed to connect to enhancement service." };
+        }
+    }
     };
+    
     
     // --- Core Generation & ComfyUI Logic ---
     async function queue_prompt(promptWorkflow) {
@@ -219,6 +238,39 @@
         dom.tokenModal.style.display = 'none';
     });
 
+    // --- Tambahkan semua ini ---
+    dom.enhanceToolBtn.addEventListener('click', () => {
+        dom.leftSidebar.classList.toggle('open');
+    });
+    
+    dom.closeLeftSidebarBtn.addEventListener('click', () => {
+        dom.leftSidebar.classList.remove('open');
+    });
+    
+    dom.enhancePromptBtn.addEventListener('click', async () => {
+        const keyword = dom.enhancePromptInput.value;
+        if (!keyword || dom.enhancePromptBtn.disabled) return;
+    
+        dom.enhancePromptBtn.disabled = true;
+        dom.enhancerResult.textContent = 'Meningkatkan prompt...';
+        dom.enhancerResultContainer.style.display = 'block';
+    
+        const result = await api.enhancePrompt(keyword);
+    
+        if (result.enhancedPrompt) {
+            dom.enhancerResult.textContent = result.enhancedPrompt;
+            // Salin hasil ke prompt utama saat di-klik
+            dom.enhancerResult.onclick = () => {
+                dom.prompt.value = result.enhancedPrompt;
+                dom.leftSidebar.classList.remove('open');
+            };
+        } else {
+            dom.enhancerResult.textContent = result.error || 'Gagal meningkatkan prompt.';
+        }
+    
+        dom.enhancePromptBtn.disabled = false;
+    });
+
 
     // --- Initialization ---
     const initializeApp = async () => {
@@ -245,6 +297,7 @@
     initializeApp();
 
 })(window, document);
+
 
 
 
