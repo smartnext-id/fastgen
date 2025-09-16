@@ -3,3 +3,15 @@
     { "source": "/", "destination": "/fastgen/web/index.html" }
   ]
 }
+{
+  "version": 2,
+  "builds": [
+    { "src": "backend/index.js", "use": "@vercel/node" }
+  ],
+  "routes": [
+    { "src": "/api/(.*)", "dest": "backend/index.js" },
+    { "src": "/login", "dest": "fastgen/web/login.html" },
+    { "src": "/fastgen", "dest": "fastgen/web/index.html" },
+    { "src": "/fastgen/web/(.*)", "dest": "fastgen/web/$1" }
+  ]
+}
