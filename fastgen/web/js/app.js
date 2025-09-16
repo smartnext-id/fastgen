@@ -13,14 +13,9 @@
         return;
     }
 
-    // --- Mode detection: Local vs Netlify ---
-    const isLocal = window.location.hostname === "localhost";
-    const BACKEND_URL = isLocal ? "http://localhost:3001" : "/api";
-
-    // NOTE: ganti ngrok setiap start ComfyUI
-    const comfy_hostname = isLocal
-        ? `${window.location.hostname}:${window.location.port}`
-        : "44ed6cef8e1f.ngrok-free.app";
+    // --- Config Netlify + ngrok ---
+    const BACKEND_URL = "/api";
+    const comfy_hostname = "44ed6cef8e1f.ngrok-free.app"; // ganti kalau restart ngrok
 
     // --- Backend & ComfyUI Communication ---
     function uuidv4() {
@@ -30,11 +25,7 @@
     }
     const client_id = uuidv4();
 
-    const socket = new WebSocket(
-        isLocal
-            ? `ws://${comfy_hostname}/ws?clientId=${client_id}`
-            : `wss://${comfy_hostname}/ws?clientId=${client_id}`
-    );
+    const socket = new WebSocket(`wss://${comfy_hostname}/ws?clientId=${client_id}`);
 
     socket.addEventListener("open", () => console.log("✅ Connected to ComfyUI server"));
     socket.addEventListener("error", () => console.error("❌ Failed to connect to ComfyUI"));
@@ -175,14 +166,11 @@
     // --- Core Generation & ComfyUI Logic ---
     async function queue_prompt(promptWorkflow) {
         try {
-            const response = await fetch(
-                isLocal ? "/prompt" : `https://${comfy_hostname}/prompt`,
-                {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ prompt: promptWorkflow, client_id }),
-                }
-            );
+            const response = await fetch(`https://${comfy_hostname}/prompt`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ prompt: promptWorkflow, client_id }),
+            });
             if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
         } catch (error) {
             console.error("Failed to queue prompt to ComfyUI:", error);
@@ -234,9 +222,7 @@
             setTimeout(() => {
                 setUIGenerating(false);
                 const image = data.data.output.images[0];
-                const url = isLocal
-                    ? `/view?filename=${image.filename}&type=${image.type}&subfolder=${image.subfolder}&rand=${Math.random()}`
-                    : `https://${comfy_hostname}/view?filename=${image.filename}&type=${image.type}&subfolder=${image.subfolder}&rand=${Math.random()}`;
+                const url = `https://${comfy_hostname}/view?filename=${image.filename}&type=${image.type}&subfolder=${image.subfolder}&rand=${Math.random()}`;
                 const img = document.createElement('img');
                 img.src = url;
                 dom.imageShowcase.prepend(img);
