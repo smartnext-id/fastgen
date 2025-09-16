@@ -5,28 +5,28 @@
     let authToken = localStorage.getItem('authToken');
     let userTokens = 0;
     let isGenerating = false;
-    let logoPathLength = 0; // Variabel untuk panjang path SVG
+    let logoPathLength = 0;
 
     if (!authToken) {
         window.location.href = '/login';
         return;
     }
 
-
-    
     // --- Backend & ComfyUI Communication ---
     function uuidv4() { return ([1e7]+-1e3+-4e3+-8e3+-1e11).replace(/[018]/g, c => (c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16)); }
     const client_id = uuidv4();
 
-    // CONTOH YANG BENAR (Ganti dengan URL ngrok Anda yang sebenarnya)
+    // !! PENTING: Pastikan URL ngrok ini adalah yang sedang aktif di komputer Anda !!
     const comfy_hostname = "f3c2a11f2fba.ngrok-free.app"; 
     
-  // Koneksi WebSocket ke server ComfyUI via ngrok
+    // Koneksi WebSocket ke server ComfyUI via ngrok
     const socket = new WebSocket(`wss://${comfy_hostname}/ws?clientId=${client_id}`);
-    socket.addEventListener("open", () => console.log("✅ Connected to ComfyUI server"));
+    socket.addEventListener("open", () => console.log("✅ Berhasil terhubung ke server ComfyUI"));
+    socket.addEventListener("error", () => console.error("❌ Gagal terhubung ke server ComfyUI. Pastikan ngrok berjalan."));
 
-        async function loadWorkflow() {
-        const response = await fetch("/js/base_workflow.json"); // Path disesuaikan agar lebih akurat
+
+    async function loadWorkflow() {
+        const response = await fetch("/js/base_workflow.json");
         return await response.json();
     }
     const workflow = await loadWorkflow();
@@ -83,12 +83,11 @@
         }
     };
 
-   // --- API FUNCTIONS (BAGIAN YANG DIPERBAIKI) ---
+    // --- API Functions ---
     const api = {
         async fetchUserTokens() {
             if (!authToken) return 0;
             try {
-                // Gunakan URL relatif
                 const response = await fetch('/api/getTokens', {
                     headers: { 'Authorization': `Bearer ${authToken}` }
                 });
@@ -101,12 +100,11 @@
                 userTokens = data.tokens;
                 updateTokenDisplay();
                 return data.tokens;
-            } catch (error) { console.error(error); return 0; }
+            } catch (error) { console.error("Error fetching tokens:", error); return 0; }
         },
         async deductTokens(amount) {
             if (!authToken) return false;
             try {
-                // Gunakan URL relatif
                 const response = await fetch('/api/deductTokens', {
                     method: 'POST',
                     headers: { 
@@ -115,68 +113,69 @@
                     },
                     body: JSON.stringify({ amount }),
                 });
-                if (response.status === 403 || response.status === 401) {
-                    localStorage.removeItem('authToken');
-                    window.location.href = '/login';
-                    return false;
+                 if (!response.ok) { // Penanganan error lebih baik
+                    const errorData = await response.json();
+                    throw new Error(errorData.message || 'Gagal mengurangi token.');
                 }
                 const data = await response.json();
                 if (data.success) {
                     userTokens = data.newTokens;
                     updateTokenDisplay();
                     return true;
+                } else {
+                    alert(data.message || 'Tidak cukup token.');
+                    return false;
                 }
-                return false;
             } catch (error) {
                 console.error("Error deducting tokens:", error);
+                alert(error.message);
                 return false;
             }
         },
+        async enhancePrompt(keyword) {
+            if (!authToken) return { error: "Not authenticated" };
+            try {
+                const response = await fetch('/api/enhancePrompt', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${authToken}`
+                    },
+                    body: JSON.stringify({ keyword }),
+                });
+                return await response.json();
+            } catch (error) {
+                console.error("Error enhancing prompt:", error);
+                return { error: "Gagal terhubung ke layanan enhance." };
+            }
+        },
         async requestMoreTokens() {
-            alert("Your request for more tokens has been sent to the administrator.");
+            alert("Permintaan Anda untuk token tambahan telah dikirim ke administrator.");
             return true;
         }
-         // --- Tambahkan fungsi ini ---
-        async enhancePrompt(keyword) {
-        if (!authToken) return { error: "Not authenticated" };
-        try {
-            const response = await fetch('/api/enhancePrompt', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${authToken}`
-                },
-                body: JSON.stringify({ keyword }),
-            });
-            return await response.json();
-        } catch (error) {
-            console.error("Error enhancing prompt:", error);
-            return { error: "Failed to connect to enhancement service." };
-        }
-    }
     };
-    
     
     // --- Core Generation & ComfyUI Logic ---
     async function queue_prompt(promptWorkflow) {
         try {
-            const response = await fetch("/prompt", {
+            const response = await fetch(`https://${comfy_hostname}/prompt`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ prompt: promptWorkflow, client_id }),
             });
             if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
         } catch (error) {
-            console.error("Failed to queue prompt to ComfyUI:", error);
+            console.error("Gagal mengirim prompt ke ComfyUI:", error);
             setUIGenerating(false);
-            userTokens += TOKEN_COST; 
-            updateTokenDisplay();
-            alert("Failed to send job to ComfyUI. Tokens have been refunded.");
+            // Refund token jika gagal mengirim
+            const refundResponse = await api.deductTokens(-TOKEN_COST);
+            if(refundResponse) alert("Gagal mengirim job ke ComfyUI. Token telah dikembalikan.");
         }
     }
 
     const handleGeneration = async () => {
         if (isGenerating || dom.prompt.value.length < 3) return;
+        
         const canAfford = await api.deductTokens(TOKEN_COST);
         if (!canAfford) {
             dom.tokenModal.style.display = 'flex';
@@ -206,7 +205,7 @@
         const data = JSON.parse(event.data);
         if (data.type === 'progress') {
             const { value, max } = data.data;
-            dom.progressText.textContent = `Step ${value} of ${max}`;
+            dom.progressText.textContent = `Langkah ${value} dari ${max}`;
             const progress = value / max;
             const offset = logoPathLength * (1 - progress);
             dom.loadingLogoPath.style.strokeDashoffset = offset;
@@ -216,7 +215,7 @@
             setTimeout(() => {
                 setUIGenerating(false);
                 const image = data.data.output.images[0];
-                const url = `/view?filename=${image.filename}&type=${image.type}&subfolder=${image.subfolder}&rand=${Math.random()}`;
+                const url = `https://${comfy_hostname}/view?filename=${image.filename}&type=${image.type}&subfolder=${image.subfolder}&rand=${Math.random()}`;
                 const img = document.createElement('img');
                 img.src = url;
                 dom.imageShowcase.prepend(img);
@@ -238,28 +237,27 @@
         dom.tokenModal.style.display = 'none';
     });
 
-    // --- Tambahkan semua ini ---
     dom.enhanceToolBtn.addEventListener('click', () => {
         dom.leftSidebar.classList.toggle('open');
     });
-    
+
     dom.closeLeftSidebarBtn.addEventListener('click', () => {
         dom.leftSidebar.classList.remove('open');
     });
-    
+
     dom.enhancePromptBtn.addEventListener('click', async () => {
         const keyword = dom.enhancePromptInput.value;
         if (!keyword || dom.enhancePromptBtn.disabled) return;
-    
+
         dom.enhancePromptBtn.disabled = true;
         dom.enhancerResult.textContent = 'Meningkatkan prompt...';
         dom.enhancerResultContainer.style.display = 'block';
-    
+
         const result = await api.enhancePrompt(keyword);
-    
+
         if (result.enhancedPrompt) {
             dom.enhancerResult.textContent = result.enhancedPrompt;
-            // Salin hasil ke prompt utama saat di-klik
+            dom.enhancerResult.style.cursor = 'pointer';
             dom.enhancerResult.onclick = () => {
                 dom.prompt.value = result.enhancedPrompt;
                 dom.leftSidebar.classList.remove('open');
@@ -267,10 +265,9 @@
         } else {
             dom.enhancerResult.textContent = result.error || 'Gagal meningkatkan prompt.';
         }
-    
+
         dom.enhancePromptBtn.disabled = false;
     });
-
 
     // --- Initialization ---
     const initializeApp = async () => {
@@ -297,12 +294,3 @@
     initializeApp();
 
 })(window, document);
-
-
-
-
-
-
-
-
-
