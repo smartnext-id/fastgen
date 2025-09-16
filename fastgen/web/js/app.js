@@ -12,20 +12,21 @@
         return;
     }
 
-    // --- Backend & ComfyUI Communication ---
-    const BACKEND_URL = 'https://fastgen-ten.vercel.app/api'; // Ganti dengan URL Vercel Anda
+
     
+    // --- Backend & ComfyUI Communication ---
     function uuidv4() { return ([1e7]+-1e3+-4e3+-8e3+-1e11).replace(/[018]/g, c => (c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16)); }
     const client_id = uuidv4();
 
     // CONTOH YANG BENAR (Ganti dengan URL ngrok Anda yang sebenarnya)
-    const comfy_hostname = "collectible-distinct.ngrok-free.app"; 
+    const comfy_hostname = "https://f3c2a11f2fba.ngrok-free.app"; 
     
-    // Baris ini sudah benar, tidak perlu diubah
+  // Koneksi WebSocket ke server ComfyUI via ngrok
     const socket = new WebSocket(`wss://${comfy_hostname}/ws?clientId=${client_id}`);
+    socket.addEventListener("open", () => console.log("✅ Connected to ComfyUI server"));
 
-    async function loadWorkflow() {
-        const response = await fetch("/fastgen/js/base_workflow.json");
+        async function loadWorkflow() {
+        const response = await fetch("/fastgen/web/js/base_workflow.json"); // Path disesuaikan agar lebih akurat
         return await response.json();
     }
     const workflow = await loadWorkflow();
@@ -75,11 +76,12 @@
         }
     };
 
-    // --- API FUNCTIONS ---
+   // --- API FUNCTIONS (BAGIAN YANG DIPERBAIKI) ---
     const api = {
         async fetchUserTokens() {
             if (!authToken) return 0;
             try {
+                // Gunakan URL relatif
                 const response = await fetch('/api/getTokens', {
                     headers: { 'Authorization': `Bearer ${authToken}` }
                 });
@@ -97,7 +99,8 @@
         async deductTokens(amount) {
             if (!authToken) return false;
             try {
-                 const response = await fetch(`${BACKEND_URL}/deductTokens`, {
+                // Gunakan URL relatif
+                const response = await fetch('/api/deductTokens', {
                     method: 'POST',
                     headers: { 
                         'Content-Type': 'application/json',
@@ -123,8 +126,8 @@
             }
         },
         async requestMoreTokens() {
-             alert("Your request for more tokens has been sent to the administrator.");
-             return true;
+            alert("Your request for more tokens has been sent to the administrator.");
+            return true;
         }
     };
     
@@ -235,6 +238,7 @@
     initializeApp();
 
 })(window, document);
+
 
 
 
